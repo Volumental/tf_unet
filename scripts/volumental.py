@@ -43,15 +43,15 @@ def main():
                          restore=args.restore,
                          write_graph=args.write_graph)
 
-    print("Predicting...")
-    prediction = net.predict(path, x_test)
-
     print("Generating test data...")
     testing_generator = dataset_generator(os.path.join(args.data, "test"))
     num_testing_data = len(testing_generator.data_files)
     print("{} examples in test".format(num_testing_data))
     # x_test, y_test = testing_generator(num_testing_data)
     x_test, y_test = testing_generator(20) # Look at few images
+
+    print("Predicting...")
+    prediction = net.predict(path, x_test)
 
     print("Calculating error_rate...")
     error_rate=unet.error_rate(prediction, util.crop_to_shape(y_test, prediction.shape))
