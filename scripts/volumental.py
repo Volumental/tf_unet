@@ -37,7 +37,7 @@ def main():
                     features_root=64,
                     cost="dice_coefficient")
 
-    trainer = unet.Trainer(net, batch_size=args.batch_size, optimizer="adam")
+    trainer = unet.Trainer(net, batch_size=args.batch_size, optimizer="momentum", opt_kwargs=dict(momentum=0.2))
 
     print("Training...")
     path = trainer.train(training_generator, "./unet_trained",
