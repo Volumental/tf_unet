@@ -10,7 +10,8 @@ from tf_unet import util
 def dataset_generator(data_path: str):
     return image_util.ImageDataProvider(os.path.join(data_path, "*.png"),
                                              data_suffix="_color.png",
-                                             mask_suffix="_gt.png")
+                                             mask_suffix="_gt.png",
+                                             prior_suffix="_prior.png")
 
 def main():
     parser = argparse.ArgumentParser()
