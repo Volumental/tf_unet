@@ -2,6 +2,8 @@
 import argparse
 import os
 
+import tensorflow as tf
+
 from tf_unet import image_util
 from tf_unet import unet
 from tf_unet import util
@@ -50,15 +52,18 @@ def main():
     testing_generator = dataset_generator(os.path.join(args.data, "test"))
     num_testing_data = len(testing_generator.data_files)
     print("{} examples in test".format(num_testing_data))
-    # x_test, y_test = testing_generator(num_testing_data)
-    x_test, y_test = testing_generator(20) # Look at few images
 
     print("Predicting...")
+    x_test, y_test = testing_generator(10) # Look at few images
     prediction = net.predict(path, x_test)
 
     print("Calculating error_rate...")
-    error_rate=unet.error_rate(prediction, util.crop_to_shape(y_test, prediction.shape))
+    error_rate = unet.error_rate(prediction, util.crop_to_shape(y_test, prediction.shape))
     print("Testing error rate: {:.2f}%".format(error_rate))
+
+    print("Visualizing test output...")
+    img = util.combine_img_prediction(x_test, y_test, prediction)
+    util.save_image(img, "%s/%s.jpg"%(trainer.prediction_path, "_test_output"))
 
 
 if __name__ == '__main__':

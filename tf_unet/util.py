@@ -21,6 +21,8 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import numpy as np
 from PIL import Image
 
+import cv2
+
 def plot_prediction(x_test, y_test, prediction, save=False):
     import matplotlib
     import matplotlib.pyplot as plt
@@ -69,11 +71,11 @@ def to_rgb(img):
     if channels < 3:
         img = np.tile(img, 3)
     if channels == 4:
-        img, alpha = np.dsplit(img, [3])
-        return np.hstack((to_rgb(img), to_rgb(alpha))) # color and prior side-by-side
+        rgb, alpha = np.dsplit(img, [3])
+        return np.hstack((to_rgb(rgb), to_rgb(alpha))) # color and prior side-by-side
     img[np.isnan(img)] = 0
-    img -= np.amin(img)
-    img /= np.amax(img)
+    # img -= np.amin(img)
+    # img /= np.amax(img)
     img *= 255
     return img
 
@@ -88,6 +90,26 @@ def crop_to_shape(data, shape):
     offset1 = (data.shape[2] - shape[2])//2
     return data[:, offset0:(-offset0), offset1:(-offset1)]
 
+
+def show_mask(bgr, mask, name):
+    bgr  = (np.atleast_3d(bgr) * 255).astype('uint8')
+    mask = (np.atleast_3d(mask) * 255).astype('uint8')
+
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+
+    colormap = cv2.applyColorMap(mask, cv2.COLORMAP_JET)
+
+    visualized_mask = gray * 0.5 + colormap * 0.5
+
+    font_scale = 1.0
+    thickness = 1
+    cv2.putText(visualized_mask, name, (5, 22), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+
+    # return np.hstack((visualized_mask, colormap, gray))
+    return visualized_mask
+
+
 def combine_img_prediction(data, gt, pred):
     """
     Combines the data, grouth thruth and the prediction into one rgb image
@@ -100,9 +122,21 @@ def combine_img_prediction(data, gt, pred):
     """
     ny = pred.shape[2]
     ch = data.shape[3]
-    img = np.concatenate((to_rgb(crop_to_shape(data, pred.shape).reshape(-1, ny, ch)),
-                          to_rgb(crop_to_shape(gt[..., 1], pred.shape).reshape(-1, ny, 1)),
-                          to_rgb(pred[..., 1].reshape(-1, ny, 1))), axis=1)
+
+    data = crop_to_shape(data, pred.shape).reshape(-1, ny, ch)
+    gt = crop_to_shape(gt[..., 1], pred.shape).reshape(-1, ny, 1)
+    pred = pred[..., 1].reshape(-1, ny, 1)
+
+    if ch == 4:
+        # Image with prior. Visualize masks:
+        color, prior = np.dsplit(data, [3])
+        img = np.concatenate((to_rgb(color),
+                              show_mask(color, prior, "prior"),
+                              show_mask(color, pred, "predicted"),
+                              show_mask(color, gt, "gt")), axis=1)
+    else:
+        img = np.concatenate((to_rgb(data), to_rgb(gt), to_rgb(pred)), axis=1)
+
     return img
 
 def save_image(img, path):
