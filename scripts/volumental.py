@@ -34,7 +34,7 @@ def main():
     net = unet.Unet(channels=training_generator.channels,
                     n_class=training_generator.n_class,
                     layers=4,
-                    features_root=64,
+                    features_root=16,
                     cost="dice_coefficient")
 
     trainer = unet.Trainer(net, batch_size=args.batch_size, optimizer="momentum", opt_kwargs=dict(momentum=0.2))
